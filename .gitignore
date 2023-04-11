@@ -1,4 +1,5 @@
 *.o
+*.so
 *.a
 .cache/
 .vs/
@@ -32,3 +33,8 @@ compile_commands.json
 .venv
 __pycache__
 .swiftpm
+
+_skbuild
+*.egg-info
+dist/
+CMakeFiles/

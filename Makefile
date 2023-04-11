@@ -227,3 +227,6 @@ ggml.o: ggml.c ggml.h
 
 rwkv.o: rwkv.cpp rwkv.h
 	$(CXX) $(CXXFLAGS) -c rwkv.cpp -o rwkv.o
+
+librwkv.so: rwkv.o ggml.o
+	$(CXX) $(CXXFLAGS) -shared -fPIC -o librwkv.so rwkv.o ggml.o $(LDFLAGS)

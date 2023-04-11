@@ -245,3 +245,28 @@ if (BUILD_SHARED_LIBS)
     set_target_properties(rwkv PROPERTIES POSITION_INDEPENDENT_CODE ON)
     target_compile_definitions(rwkv PRIVATE RWKV_SHARED RWKV_BUILD)
 endif()
+
+if (SKBUILD)
+    if (UNIX)
+        add_custom_command(
+            OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/librwkv.so
+            COMMAND make librwkv.so
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        )
+        add_custom_target(
+            run ALL
+            DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/librwkv.so
+        )
+        install(
+            FILES ${CMAKE_CURRENT_SOURCE_DIR}/librwkv.so
+            DESTINATION rwkv_cpp
+        )
+    else()
+        set(BUILD_SHARED_LIBS "On")
+        install(
+            TARGETS rwkv 
+            LIBRARY DESTINATION rwkv_cpp
+            RUNTIME DESTINATION rwkv_cpp
+        )
+    endif(UNIX)
+endif(SKBUILD)

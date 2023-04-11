@@ -188,7 +188,7 @@ def load_rwkv_shared_library() -> RWKVSharedLibrary:
     if 'win32' in sys.platform or 'cygwin' in sys.platform:
         file_name = 'rwkv.dll'
     elif 'darwin' in sys.platform:
-        file_name = 'librwkv.dylib'
+        file_name = 'librwkv.so'
     else:
         file_name = 'librwkv.so'
 
@@ -201,6 +201,8 @@ def load_rwkv_shared_library() -> RWKVSharedLibrary:
         f'bin/Release/{file_name}',
         # Search relative to this file
         str(repo_root_dir / 'bin' / 'Release' / file_name),
+        # Search in python package
+        str(repo_root_dir / 'rwkv' / file_name),
         # Fallback
         str(repo_root_dir / file_name)
     ]
