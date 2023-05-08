@@ -4,11 +4,27 @@ import argparse
 import os
 import pathlib
 import time
-import sampling
 import tokenizers
-import rwkv_cpp_model
-import rwkv_cpp_shared_library
 
+from rwkv_cpp.sampling import sample_logits
+from rwkv_cpp.rwkv_cpp_model import RWKVModel
+from rwkv_cpp.rwkv_cpp_shared_library import load_rwkv_shared_library
+
+# =================================================================================================
+
+parser = argparse.ArgumentParser(description='Generate completions from RWKV model based on a prompt')
+parser.add_argument('model_path', help='Path to RWKV model in ggml format')
+args = parser.parse_args()
+
+print('Loading 20B tokenizer')
+tokenizer_path = pathlib.Path(__file__).parent / 'rwkv/20B_tokenizer.json'
+tokenizer = tokenizers.Tokenizer.from_file(str(tokenizer_path))
+
+library = load_rwkv_shared_library()
+print(f'System info: {library.rwkv_get_system_info_string()}')
+
+print('Loading RWKV model')
+model = RWKVModel(library, args.model_path)
 
 # ======================================== Script settings ========================================
 
@@ -59,7 +75,7 @@ for GENERATION in range(generation_count):
     print(prompt, end='[')
     start = time.time()
 
-    logits, state = init_logits.clone(), init_state.clone()
+    logits, state = init_logits, init_state
 
     for i in range(tokens_per_generation):
         token = sampling.sample_logits(logits, temperature, top_p)

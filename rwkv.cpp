@@ -354,8 +354,8 @@ struct rwkv_context * rwkv_init_from_file(const char * file_path, const uint32_t
     // Verify order of dimensions
     struct ggml_tensor * emb = model->emb;
     RWKV_ASSERT_NULL(emb->n_dims == 2, "Unexpected dimension count of embedding matrix %d", emb->n_dims);
-    RWKV_ASSERT_NULL(emb->ne[0] == model->n_embed, "Unexpected dimension of embedding matrix %lld", emb->ne[0]);
-    RWKV_ASSERT_NULL(emb->ne[1] == model->n_vocab, "Unexpected dimension of embedding matrix %lld", emb->ne[1]);
+    RWKV_ASSERT_NULL(emb->ne[0] == model->n_embed, "Unexpected dimension of embedding matrix %ld", emb->ne[0]);
+    RWKV_ASSERT_NULL(emb->ne[1] == model->n_vocab, "Unexpected dimension of embedding matrix %ld", emb->ne[1]);
 
     uint32_t n_embed = model->n_embed;
     uint32_t n_layer = model->n_layer;
