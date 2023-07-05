@@ -40,6 +40,7 @@ option(RWKV_FMA                    "rwkv: enable FMA"                           
 option(RWKV_ACCELERATE             "rwkv: enable Accelerate framework"                    ON)
 option(RWKV_OPENBLAS               "rwkv: use OpenBLAS"                                   OFF)
 option(RWKV_CUBLAS                 "rwkv: use cuBLAS"                                     OFF)
+option(RWKV_CLBLAST                "rwkv: use CLBlast"                                    OFF)
 
 # Build only shared library without building tests and extras
 option(RWKV_STANDALONE             "rwkv: build only RWKV library"                        OFF)
@@ -122,6 +123,52 @@ if (RWKV_CUBLAS)
 
     else()
         message(WARNING "cuBLAS not found")
+    endif()
+endif()
+
+if (RWKV_CLBLAST)
+    cmake_minimum_required(VERSION 3.17)
+
+    file(GLOB OPENCL_INCLUDE_SEARCH_PATHS ${CMAKE_SOURCE_DIR}/OpenCL-*/)
+    file(GLOB CLBLAST_INCLUDE_SEARCH_PATHS ${CMAKE_SOURCE_DIR}/CLBlast-*/)
+
+    set(OPENCL_INCLUDE_SEARCH_PATHS
+        /usr/include
+        /usr/local/include
+        $ENV{OPENCL_HOME}
+        $ENV{OPENCL_HOME}/include
+        ${OPENCL_INCLUDE_SEARCH_PATHS}
+        )
+
+    set(CLBLAST_INCLUDE_SEARCH_PATHS
+        /usr/include
+        /usr/local/include
+        $ENV{CLBLAST_HOME}
+        $ENV{CLBLAST_HOME}/include
+        ${CLBLAST_INCLUDE_SEARCH_PATHS}
+        )
+
+    find_path(OPENCL_INC NAMES opencl.h PATHS ${OPENCL_INCLUDE_SEARCH_PATHS} PATH_SUFFIXES include/CL)
+    find_library(OPENCL_LIB NAMES OpenCL PATHS ${OPENCL_INCLUDE_SEARCH_PATHS} PATH_SUFFIXES lib)
+    find_path(CLBLAST_INC NAMES clblast.h PATHS ${CLBLAST_INCLUDE_SEARCH_PATHS} PATH_SUFFIXES include)
+    find_library(CLBLAST_LIB NAMES clblast PATHS ${CLBLAST_INCLUDE_SEARCH_PATHS} PATH_SUFFIXES lib)
+
+    if (OPENCL_LIB)
+        set(OPENCL_INC ${OPENCL_INC}/..) # disgusting
+        message(STATUS "OpenCL SDK found: ${OPENCL_INC}")
+
+        if (CLBLAST_LIB)
+            message(STATUS "CLBlast found: ${CLBLAST_INC}")
+            add_compile_definitions(GGML_USE_CLBLAST)
+            set(GGML_OPENCL_SOURCES ${CMAKE_SOURCE_DIR}/ggml/src/ggml-opencl.cpp ${CMAKE_SOURCE_DIR}/ggml/src/ggml-opencl.h)
+            set(GGML_OPENCL_DIRS ${GGML_OPENCL_DIRS} ${OPENCL_INC} ${CLBLAST_INC})
+            set(RWKV_EXTRA_LIBS ${RWKV_EXTRA_LIBS} ${OPENCL_LIB} ${CLBLAST_LIB})
+            link_libraries("-Wl,--copy-dt-needed-entries")
+        else()
+            message(WARNING "CLBlast not found")
+        endif()
+    else()
+       message(WARNING "OpenCL SDK not found, CLBlast cannot be enabled")
     endif()
 endif()
 
@@ -250,9 +297,10 @@ endif()
 add_library(ggml OBJECT
             ${CMAKE_SOURCE_DIR}/ggml/src/ggml.c
             ${CMAKE_SOURCE_DIR}/ggml/include/ggml/ggml.h
-            ${GGML_CUDA_SOURCES})
+            ${GGML_CUDA_SOURCES}
+            ${GGML_OPENCL_SOURCES})
 
-target_include_directories(ggml PUBLIC ${CMAKE_SOURCE_DIR}/ggml/include/ggml)
+target_include_directories(ggml PUBLIC ${CMAKE_SOURCE_DIR}/ggml/include/ggml ${GGML_OPENCL_DIRS})
 target_compile_features(ggml PUBLIC c_std_11) # Don't bump
 
 if (MSVC)

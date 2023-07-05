@@ -126,7 +126,6 @@ jobs:
       - name: Dependencies
         id: depends
         run: |
-          brew update
           brew install zip
 
       - name: Build
@@ -135,7 +134,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -DRWKV_AVX2=OFF -DRWKV_FMA=OFF -DRWKV_SANITIZE_ADDRESS=ON ..
+          cmake -DRWKV_AVX2=OFF -DRWKV_FMA=OFF ..
           cmake --build . --config Release
 
       - name: Test

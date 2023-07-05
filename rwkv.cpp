@@ -3,6 +3,8 @@
 
 #ifdef GGML_USE_CUBLAS
 #include "ggml/src/ggml-cuda.h"
+#elif defined(GGML_USE_CLBLAST)
+#include "ggml/src/ggml-opencl.h"
 #endif
 
 #include <string>
@@ -1544,11 +1546,15 @@ struct rwkv_context * rwkv_clone_context(struct rwkv_context * ctx, const uint32
 }
 
 bool rwkv_gpu_offload_layers(struct rwkv_context * ctx, const uint32_t n_layers) {
-#ifdef GGML_USE_CUBLAS
+#if defined(GGML_USE_CUBLAS) || defined(GGML_USE_CLBLAST)
     const auto offload = [&](struct ggml_tensor * tensor) {
         // TODO support multi-GPU
         tensor->backend = GGML_BACKEND_GPU;
+#ifdef GGML_USE_CUBLAS
         ggml_cuda_transform_tensor(tensor->data, tensor);
+#elif defined(GGML_USE_CLBLAST)
+        ggml_cl_transform_tensor(tensor->data, tensor);
+#endif
     };
 
     const size_t n_gpu = std::min(n_layers, ctx->instance->model.header.n_layer);
